@@ -16,11 +16,6 @@ feature:
   hop_length: 512
   power: 2.0
 
-model:
-  hidden_dim: 128
-  latent_dim: 8
-  n_hidden: 3
-
 training:
   learning_rate: 0.00001
   epochs : 20
