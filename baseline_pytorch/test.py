@@ -292,7 +292,6 @@ def main():
     if mode:
         performance["all"] = []
 
-    dir_list = ["/work/tamamori/dcase2021/dev_data/ToyCar"]
     for idx, target_dir in enumerate(dir_list):
         print("===============================================")
         print("[%d/%d] %s" % (idx + 1, len(dir_list), target_dir))
