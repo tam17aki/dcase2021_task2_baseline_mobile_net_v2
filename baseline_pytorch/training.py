@@ -27,6 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import datetime
 import os
 import sys
+from itertools import chain
 
 # Related third party imports.
 import joblib
@@ -50,11 +51,19 @@ CONFIG = util.load_yaml("./config.yaml")
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
+def flatten(nested_list):
+    """
+    Flatten list.
+    """
+    return list(chain.from_iterable(nested_list))
+
+
 def concat_features(file_list):
     """
     Extract features from audio files and then concate them into an array.
     """
     # calculate the number of dimensions
+    n_features = []
     for file_id, file_name in enumerate(file_list):
 
         # extract feature from audio file.
@@ -74,7 +83,9 @@ def concat_features(file_list):
             feature.shape[0] * file_id : feature.shape[0] * (file_id + 1), :
         ] = feature
 
-    return features
+        n_features.append(feature.shape[0])
+
+    return features, n_features
 
 
 class DcaseDataset(torch.utils.data.Dataset):
@@ -85,8 +96,8 @@ class DcaseDataset(torch.utils.data.Dataset):
     def __init__(self, unique_section_names, target_dir, mode):
         super().__init__()
 
-        n_files_ea_section = []
-        n_vectors_ea_file = []  # number of vectors for each section
+        n_files_ea_section = []  # number of files for each section
+        n_vectors_ea_file = []  # number of vectors for each file
         data = numpy.empty(
             (0, CONFIG["feature"]["n_frames"] * CONFIG["feature"]["n_mels"]),
             dtype=float,
@@ -108,21 +119,23 @@ class DcaseDataset(torch.utils.data.Dataset):
 
             # extract features from audio files and
             # concatenate them into Numpy array.
-            features = concat_features(files)
+            features, n_features = concat_features(files)
 
             data = numpy.append(data, features, axis=0)
-            n_vectors_ea_file.append(int(features.shape[0] / len(files)))
+            n_vectors_ea_file.append(n_features)
+
+        n_vectors_ea_file = flatten(n_vectors_ea_file)
 
         # make target labels for conditioning
         # they are not one-hot vector!
         labels = numpy.empty((data.shape[0]), dtype=int)
         start_index = 0
         for section_index in range(unique_section_names.shape[0]):
-            n_vectors = (
-                n_vectors_ea_file[section_index] * n_files_ea_section[section_index]
-            )
-            labels[start_index : start_index + n_vectors] = section_index
-            start_index += n_vectors
+            for file_id in range(n_files_ea_section[section_index]):
+                labels[
+                    start_index : start_index + n_vectors_ea_file[file_id]
+                ] = section_index
+                start_index += n_vectors_ea_file[file_id]
 
         # 1D vector to 2D image (1ch)
         self.data = data.reshape(
@@ -135,10 +148,6 @@ class DcaseDataset(torch.utils.data.Dataset):
         )
 
         self.labels = labels
-
-        self.n_files_ea_section = n_files_ea_section
-        self.n_vectors_ea_file = n_vectors_ea_file
-        self.n_sections = unique_section_names.shape[0]
 
     def __len__(self):
         return self.data.shape[0]  # return num of samples
@@ -337,7 +346,7 @@ def fit_gamma_dist(model, target_dir, mode):
             section_scores[file_idx] = calc_anomaly_score(
                 model, file_path=file_path, section_index=section_index
             )
-            
+
         section_scores = numpy.array(section_scores)
         dataset_scores = numpy.append(dataset_scores, section_scores)
 
