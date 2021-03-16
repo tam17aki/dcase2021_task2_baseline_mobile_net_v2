@@ -321,7 +321,7 @@ def fit_gamma_dist(model, target_dir, mode):
     """
 
     section_names = util.get_section_names(target_dir, dir_name="train")
-    dataset_scores = []
+    dataset_scores = numpy.array([], dtype=numpy.float64)
 
     # calculate anomaly scores over sections
     for section_index, section_name in enumerate(section_names):
@@ -336,10 +336,11 @@ def fit_gamma_dist(model, target_dir, mode):
             section_scores[file_idx] = calc_anomaly_score(
                 model, file_path=file_path, section_index=section_index
             )
+            
+        section_scores = numpy.array(section_scores)
+        dataset_scores = numpy.append(dataset_scores, section_scores)
 
-        dataset_scores.append(section_scores)
-
-    dataset_scores = numpy.array(dataset_scores, dtype=float)
+    dataset_scores = numpy.array(dataset_scores)
 
     # fit gamma distribution for anomaly scores
     gamma_params = scipy.stats.gamma.fit(dataset_scores)
