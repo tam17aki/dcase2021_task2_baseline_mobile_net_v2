@@ -86,6 +86,7 @@ class DcaseDataset(torch.utils.data.Dataset):
         super().__init__()
 
         n_files_ea_section = []
+        n_vectors_ea_file = []  # number of vectors for each section
         data = numpy.empty(
             (0, CONFIG["feature"]["n_frames"] * CONFIG["feature"]["n_mels"]),
             dtype=float,
@@ -110,16 +111,16 @@ class DcaseDataset(torch.utils.data.Dataset):
             features = concat_features(files)
 
             data = numpy.append(data, features, axis=0)
-
-        # number of vectors for each wave file
-        n_vectors_ea_file = int(data.shape[0] / sum(n_files_ea_section))
+            n_vectors_ea_file.append(int(features.shape[0] / len(files)))
 
         # make target labels for conditioning
         # they are not one-hot vector!
         labels = numpy.empty((data.shape[0]), dtype=int)
         start_index = 0
         for section_index in range(unique_section_names.shape[0]):
-            n_vectors = n_vectors_ea_file * n_files_ea_section[section_index]
+            n_vectors = (
+                n_vectors_ea_file[section_index] * n_files_ea_section[section_index]
+            )
             labels[start_index : start_index + n_vectors] = section_index
             start_index += n_vectors
 
