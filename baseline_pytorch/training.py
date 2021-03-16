@@ -383,8 +383,7 @@ def main():
     os.makedirs(CONFIG["model_directory"], exist_ok=True)
 
     # load base_directory list
-    # dir_list = util.select_dirs(config=CONFIG, mode=mode)
-    dir_list = ["/work/tamamori/dcase2021/dev_data/ToyCar"]
+    dir_list = util.select_dirs(config=CONFIG, mode=mode)
     for idx, target_dir in enumerate(dir_list):
         print("===============================================")
         print("[%d/%d] %s" % (idx + 1, len(dir_list), target_dir))
