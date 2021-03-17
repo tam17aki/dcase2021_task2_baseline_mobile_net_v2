@@ -128,7 +128,7 @@ class DcaseDataset(torch.utils.data.Dataset):
 
         # make target labels for conditioning
         # they are not one-hot vector!
-        labels = numpy.empty((data.shape[0]), dtype=int)
+        labels = numpy.zeros((data.shape[0]), dtype=int)
         start_index = 0
         for section_index in range(unique_section_names.shape[0]):
             for file_id in range(n_files_ea_section[section_index]):
