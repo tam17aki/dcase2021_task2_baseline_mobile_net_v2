@@ -164,14 +164,18 @@ def get_dataloader(dataset):
     Make dataloader from dataset for training.
     """
     train_size = int(len(dataset) * (1.0 - CONFIG["training"]["validation_split"]))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset, [train_size, val_size])
+
     data_loader_train = torch.utils.data.DataLoader(
-        Subset(dataset, list(range(0, train_size))),
+        train_dataset,
         batch_size=CONFIG["training"]["batch_size"],
         shuffle=CONFIG["training"]["shuffle"],
         drop_last=True,
     )
     data_loader_val = torch.utils.data.DataLoader(
-        Subset(dataset, list(range(train_size, len(dataset)))),
+        val_dataset,
         batch_size=CONFIG["training"]["batch_size"],
         shuffle=False,
         drop_last=False,
@@ -179,7 +183,7 @@ def get_dataloader(dataset):
 
     # dataloader of training data for evaluation only
     data_loader_eval_train = torch.utils.data.DataLoader(
-        Subset(dataset, list(range(0, train_size))),
+        train_dataset,
         batch_size=CONFIG["training"]["batch_size"],
         shuffle=False,
         drop_last=False,
