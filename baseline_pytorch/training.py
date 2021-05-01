@@ -37,7 +37,6 @@ import torch
 import torch.utils.data
 from scipy.special import softmax
 from torch import optim
-from torch.utils.data.dataset import Subset
 from torchinfo import summary
 
 # Local application/library specific imports.
